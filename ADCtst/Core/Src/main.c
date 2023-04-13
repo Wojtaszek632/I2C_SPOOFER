@@ -68,14 +68,43 @@ int __io_putchar(int ch)
 
 volatile uint32_t falling_edge_counter = 0;
 volatile uint32_t lastIRQ = 0;
+const GPIO_PinState sda_lookup_table [19] =
+{
+		GPIO_PIN_SET, //not used since first falling edge is no. 1
+
+		GPIO_PIN_SET,	GPIO_PIN_RESET,	GPIO_PIN_SET,	GPIO_PIN_SET, // 7 bits for addr
+		GPIO_PIN_SET,	GPIO_PIN_SET,	GPIO_PIN_SET,
+
+		GPIO_PIN_SET,//read or write
+
+		GPIO_PIN_RESET,//first ACK
+
+		GPIO_PIN_SET,	GPIO_PIN_RESET,	GPIO_PIN_SET,	GPIO_PIN_RESET, //8 bits DATA
+		GPIO_PIN_SET,	GPIO_PIN_RESET,	GPIO_PIN_SET,	GPIO_PIN_RESET,
+
+		GPIO_PIN_SET //second ACK
+};
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if (GPIO_Pin == SCL_IRQ_Pin) {
 
-	  HAL_GPIO_WritePin(PC4_GPIO_Port,PC4_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(SDA_GPIO_Port,SDA_Pin, GPIO_PIN_SET);
+	  //HAL_GPIO_WritePin(PC4_GPIO_Port,PC4_Pin, GPIO_PIN_SET);
+	  //HAL_GPIO_WritePin(SDA_GPIO_Port,SDA_Pin, GPIO_PIN_SET);
 	  falling_edge_counter++;
 	  lastIRQ= HAL_GetTick();
+
+	  if(falling_edge_counter <= 18)
+	  	  {
+	  	  HAL_GPIO_WritePin(PC4_GPIO_Port,PC4_Pin, sda_lookup_table[falling_edge_counter]);
+	  	  HAL_GPIO_WritePin(SDA_GPIO_Port,SDA_Pin, sda_lookup_table[falling_edge_counter]);
+	  	  }
+	  	  else
+	  	  {
+	  		 falling_edge_counter = 0;
+	  		 HAL_GPIO_WritePin(PC4_GPIO_Port,PC4_Pin, GPIO_PIN_SET);
+	  		 HAL_GPIO_WritePin(SDA_GPIO_Port,SDA_Pin, GPIO_PIN_SET);
+	  	  }
+
   }
 }
 /* USER CODE END 0 */
@@ -131,14 +160,13 @@ int main(void)
 		  HAL_GPIO_WritePin(SDA_GPIO_Port,SDA_Pin, GPIO_PIN_SET);
 	  }
 
-	  if(falling_edge_counter>=9)
+	 /* if(falling_edge_counter>=9)
 	  {
 		 HAL_GPIO_WritePin(PC4_GPIO_Port,PC4_Pin, GPIO_PIN_RESET);
 		 HAL_GPIO_WritePin(SDA_GPIO_Port,SDA_Pin, GPIO_PIN_RESET);
 		 falling_edge_counter = 0;
 	  }
-
-
+*/
 
 	 // if (HAL_GPIO_ReadPin(BT1_GPIO_Port, BT1_Pin) == GPIO_PIN_RESET)
 
